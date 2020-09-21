@@ -379,8 +379,10 @@ function forces_y(obj) {
     // The obj is going to fall a little bit, if I know how high up it was it meters and in pixels, and I know how many pixels is at the bottom of the screen and 0 meters,
     // I can figure out where it's located in pixels:
     var numPixels_y = myGameArea.canvasHeight;
+
     // var ball_x // determine how far the ball is from my eyes and then update 6 meters to the correct distance the ball is from my eyes
-    var finalObjPixelHeight_y = numPixels_y+(-1*numPixels_y/heroDistanceToObj(obj))*finalPosition_y; // assuming the ball's x position is 6m away from me
+    var finalObjPixelHeight_y = numPixels_y+(-1*numPixels_y/heroDistanceToObjInMeters(obj))*finalPosition_y;
+    // var finalObjPixelHeight_y = numPixels_y+(-1*numPixels_y/6*finalPosition_y); // assuming the ball's x position is 6m away from me
 
     // now I can update objHeight_y and velocity if they aren't going to hit the ground. Otherwise, I need to draw them on the ground
     if (finalObjPixelHeight_y >= myGameArea.canvasHeight) {
@@ -388,7 +390,9 @@ function forces_y(obj) {
         // If the ball would go past the canvas ground if it wasn't for me:
         // set the ball on the ground with no bounce:
         finalObjPixelHeight_y = myGameArea.canvasHeight-numPixelsAboveGround;
-        finalPosition_y = numPixelsAboveGround/(numPixels_y+(-1*numPixels_y/heroDistanceToObj(obj)));
+        // finalPosition_y = numPixelsAboveGround/(numPixels_y+(-1*numPixels_y/6));
+        // finalPosition_y = numPixelsAboveGround/(numPixels_y+(-1*numPixels_y/heroDistanceToObj(obj)));
+        finalPosition_y = numPixelsAboveGround/(numPixels_y+(-1*numPixels_y/heroDistanceToObjInMeters(obj)));
         finalVelocity_y = 0;
     }
     obj.y = finalObjPixelHeight_y; // obj.y needs to be the very bottom y position of the obj
@@ -435,6 +439,10 @@ function forces(obj) {
 
 
 
+// block1 = new blockComponent(100, 320, 0, 30, 30, "red", 10, "fire");
+//     block2 = new blockComponent(220, 200, 0, 50, 50, "gray", 150, "metal");
+//     ball1 = new ballComponent(600, 300, 0, 50, "blue", true, 80, "water");
+
 // elementType="Water", Rock, Fire, air, metal, electricity, laser
 
 // draw an circle/ball to the canvas:
@@ -449,6 +457,9 @@ function ballComponent(x=100, y=200, z=0, radius, color, filled=true, mass=50, e
     this.x = x;
     this.y = y;
     this.z = z;
+    this.x_pixels = 0;
+    this.y_pixels = 0;
+    this.z_pixels = 0;
     this.radius = radius;
     this.objHeight = function() {return this.y + this.radius;};
     this.filled = filled;
@@ -499,8 +510,12 @@ function blockComponent(x=200, y=300, z=0, width, height, color, mass=100, eleme
     }
 }
 
-function heroDistanceToObj(obj) {
-    return Math.max(obj.z - hero.z, 5);
+function heroDistanceToObjInMeters(obj) {
+    // var distanceInPixels = Math.max(Math.abs(obj.z - hero.z), 100);
+    // var distanceInMeters = distanceInPixels * (0.3/myGameArea.canvasWidth); //0.3meters/screenWidth pixels;
+    // return distanceInMeters;
+    // return distanceInPixels * (0.3/myGameArea.canvasWidth);
+    return Math.max(Math.abs(obj.z - hero.z), 100) * 0.3/myGameArea.canvasWidth;
     // return ((obj.x-hero.x)**2 + (obj.y-hero.y)**2 + (obj.z-hero.z)**2)**0.5;
 }
 
