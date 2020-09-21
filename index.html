@@ -241,14 +241,16 @@ function keyWasReleased(event) {
     if (keyCode >= 65 && keyCode <= 90) {
         keyCode +=32;
     }    
-    var pressedKey = String.fromCharCode(keyCode);  //String.fromCodePoint(x);     // Convert the value into a character
-    if (pressedKey == 'd') {
-        holdObjSteadyAtThisHeightInMeters = 0;
+    var releasedKey = String.fromCharCode(keyCode);  //String.fromCodePoint(x);     // Convert the value into a character
+    if (releasedKey == 'd') {
+        for (obj in controllableGameObjs) {
+            obj.holdObjSteadyAtThisHeightInMeters = 0;
+        }
     }
         // console.log("key was released")
 }
 
-var holdObjSteadyAtThisHeightInMeters = 0;
+// var holdObjSteadyAtThisHeightInMeters = 0;
 
 function sumOfForces(obj) {
     if (obj.isUnderMyControl == true) { // if I have an obj under my control, make sure the exertingForce is correct given the input
@@ -268,12 +270,16 @@ function sumOfForces(obj) {
             // I need to know what the height of the object was that I want to hold steady. Then I can work towards getting the object near that height
             if (maxElementalForce > obj.mass * GRAVITY) { // If I'm able to hold the object up and steady
 
-                if (holdObjSteadyAtThisHeightInMeters == 0) {
-                    holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
+                if (obj.holdObjSteadyAtThisHeightInMeters == 0) {
+                    obj.holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
+                }
+                // if the obj raised or fell at 1/3rd a meter from where I tried to stop it, reset the stopping point
+                if (Math.abs(obj.holdObjSteadyAtThisHeightInMeters - obj.objMetersAboveGround) > 0.3) {
+                    obj.holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
                 }
 
                 // PID...I also need to keep track of velocity
-                if (obj.objMetersAboveGround < holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point
+                if (obj.objMetersAboveGround < obj.holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point
                     if (obj.objVelocity > 0) { // if obj is moving up, I only want to apply a negative force that gets weaker as the obj is closer to the line
                         // var distanceAwayInMeters = Math.abs(obj.objMetersAboveGround - holdObjSteadyAtThisHeightInMeters);
                         me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; //I'll try constant v//-1*maxElementalForce;
@@ -387,8 +393,9 @@ function ballComponent(x, y, radius, color, filled=true, mass=50, elementType="w
     this.x = x;
     this.y = y;
     this.radius = radius;
-    this.obHeight = function() {return this.y + this.radius;};
+    this.objHeight = function() {return this.y + this.radius;};
     this.filled = filled;
+    this.holdObjSteadyAtThisHeightInMeters = 0; // Use this to keep track of where the obj should stay at when being held steady
     // update is needed for redrawing the component to the canvas every tick
     this.update = function() {
         ctx = myGameArea.context;
@@ -420,6 +427,7 @@ function blockComponent(x, y, width, height, color, mass=100, elementType="rock"
     this.x = x;
     this.y = y;
     this.objHeight = function() {return this.y + this.height;};
+    this.holdObjSteadyAtThisHeightInMeters = 0; // Use this to keep track of where the obj should stay at when being held steady
     this.color = color;
     this.update = function() {
         ctx = myGameArea.context;
