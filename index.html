@@ -53,12 +53,12 @@ function startGame() {
     myGameArea.start();
 
     // creates the player hero char:
-    me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero();
+    me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero(0, 0, -6);
 
     // create a few game objs
-    block1 = new blockComponent(100, 320, 30, 30, "red", 10, "fire");
-    block2 = new blockComponent(220, 200, 50, 50, "gray", 150, "metal");
-    ball1 = new ballComponent(600, 300, 50, "blue", true, 80, "water");
+    block1 = new blockComponent(100, 320, 0, 30, 30, "red", 10, "fire");
+    block2 = new blockComponent(220, 200, 0, 50, 50, "gray", 150, "metal");
+    ball1 = new ballComponent(600, 300, 0, 50, "blue", true, 80, "water");
 
     controllableGameObjs["block1"] = block1;
     controllableGameObjs["block2"] = block2;
@@ -84,16 +84,18 @@ function updateGameArea() {
     ball1.isUnderMyControl = true;
     block1.isUnderMyControl = true;
     block2.isUnderMyControl = true;
-    me_ThePlayer1CharacterHero.objImControlling = ball1;
+    // me_ThePlayer1CharacterHero.objImControlling = ball1;
     
 
+    // Calculate the resulting 3d forces on each object
+    forces(ball1);
+    forces(block1);
+    forces(block2);
     // Calculate gravity for every obj:
     // If the obj moved, update the drawing for ball1:
-    gravity(ball1);
-    gravity(block1);
-    gravity(block2);
-    
-
+    // gravity(ball1);
+    // gravity(block1);
+    // gravity(block2);
     // Update all the objs that were or will be visible (so that they can get redrawn to the screen) after every clear screen call
     ball1.update();
     block1.update();
@@ -104,7 +106,7 @@ function updateGameArea() {
 
 
 
-function me_ThePlayer1CharacterHero(x=0, y=0, z=0, hipRotationY=0, leftArmAimingX=0, leftArmAimingY=screen.availHeight, rightArmAimingX=screen.width, rightArmAimingY=screen.availHeight, mass=100, waterForcePower=0, fireForcePower=0, airForcePower=0, rockForcePower=0, metalForcePower=0, electricityForcePower=0, laserForcePower=0, staminaEnergy=100, punchingPower=10, flyingSpeed=0, flyingAcceleration=0, runningSpeed=10, runningAcceleration=10, jumpingHeight=1, swimmingSpeed=1) {
+function me_ThePlayer1CharacterHero(x=0, y=0, z=-6, hipRotationY=0, leftArmAimingX=0, leftArmAimingY=screen.availHeight, rightArmAimingX=screen.width, rightArmAimingY=screen.availHeight, mass=100, waterForcePower=0, fireForcePower=0, airForcePower=0, rockForcePower=0, metalForcePower=0, electricityForcePower=0, laserForcePower=0, staminaEnergy=100, punchingPower=10, flyingSpeed=0, flyingAcceleration=0, runningSpeed=10, runningAcceleration=10, jumpingHeight=1, swimmingSpeed=1) {
     this.waterForcePower=waterForcePower;
     this.fireForcePower=fireForcePower;
     this.airForcePower=airForcePower;
@@ -133,7 +135,7 @@ function me_ThePlayer1CharacterHero(x=0, y=0, z=0, hipRotationY=0, leftArmAiming
     this.tryingToForceLiftObjUp = false;
     this.tryingToForceThrowObjDown = false;
     this.exertingForce = 0; // this should change as I try to change what i want to do. the exertingForce should increase when I want to throw something up
-    this.objImControlling = null;
+    // this.objImControlling = null;
     this.myElementSkillSet = {water: 20, fire: 20, ice: 20, air: 20, rock: 20, metal: 20, electricity: 20, laser: 20};
     this.maxMassToBeForceHeld = {water: 100, fire: 100, ice: 100, air: 100, rock: 100, metal: 100, electricity: 100, laser: 100}; // this gets larger as the player levels up/masters the elements
     this.massControlPercent = 1; // percent/100 from 0 to 1. Controls how much mass max I want to be able to hold steady
@@ -216,7 +218,7 @@ function keyWasPressed(event) {
         me_ThePlayer1CharacterHero.tryingToForceObjRight = true;
     } else if (pressedKey == 'i') { // accel obj forward
         me_ThePlayer1CharacterHero.tryingToForceObjForward = true;
-    } else if (pressedKey == ',') { // accel obj back
+    } else if (keyCode == 188) { // accel obj back
         me_ThePlayer1CharacterHero.tryingToForceObjBack = true;
     } 
 
@@ -231,11 +233,11 @@ function keyWasPressed(event) {
         me_ThePlayer1CharacterHero.moveRight = true;
     } 
     // rotate:
-    else if (keyCode == 37) { // rotate left
+    else if (keyCode == 189) { // rotate left
         me_ThePlayer1CharacterHero.rotateLeft = true;
-    } else if (keyCode == 39) { // rotate right
+    } else if (keyCode == 187) { // rotate right
         me_ThePlayer1CharacterHero.rotateRight = true;
-    } 
+    }
     // In order to accelerate player1 up, they need to use their force to accelerate the earth or something touching the ground downward
 
     else {
@@ -253,58 +255,60 @@ function keyWasReleased(event) {
     me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = false;
     me_ThePlayer1CharacterHero.tryingToForceThrowObjDown = false;
     me_ThePlayer1CharacterHero.exertingForce = 0;
+    me_ThePlayer1CharacterHero.tryingToForceObjLeft = false;
+    me_ThePlayer1CharacterHero.tryingToForceObjRight = false;
+    me_ThePlayer1CharacterHero.tryingToForceObjForward = false;
+    me_ThePlayer1CharacterHero.tryingToForceObjBack = false;
+
     var keyCode = event.keyCode;
     if (keyCode >= 65 && keyCode <= 90) {
         keyCode +=32;
     }    
     var releasedKey = String.fromCharCode(keyCode);  //String.fromCodePoint(x);     // Convert the value into a character
-    if (releasedKey == 'd') {
-        for (obj in controllableGameObjs) {
-            obj.holdObjSteadyAtThisHeightInMeters = 0;
-        }
+    // if (releasedKey == 'd') {
+    //     for (obj in controllableGameObjs) {
+    //         // obj.feature = value
+    //     }
+    // }
+    // stop moving:
+    if (keyCode == 38) { // stop move forward
+        me_ThePlayer1CharacterHero.moveForward = false;
+    } else if (keyCode == 40) { // stop move back
+        me_ThePlayer1CharacterHero.moveBackward = false;
+    } else if (keyCode == 37) { // stop move left
+        me_ThePlayer1CharacterHero.moveLeft = false;
+    } else if (keyCode == 39) { // stop move right
+        me_ThePlayer1CharacterHero.moveRight = false;
+    } 
+    // stop rotate:
+    else if (keyCode == 189) { // rotate left
+        me_ThePlayer1CharacterHero.rotateLeft = false;
+    } else if (keyCode == 187) { // rotate right
+        me_ThePlayer1CharacterHero.rotateRight = false;
     }
-        // console.log("key was released")
+    // console.log("key was released")
 }
 
-// I would like to make sure that objects with low masses don't oscillate rapidly when I try to hold them steady
 
-function sumOfForces(obj) {
+function sumOfForces_y(obj) {
     if (obj.isUnderMyControl == true) { // if I have an obj under my control, make sure the exertingForce is correct given the input
-        // console.log("me_ThePlayer1CharacterHero.exertingForce")
         var myElementalPowerRating = me_ThePlayer1CharacterHero.myElementSkillSet[obj.elementType];
         var maxElementalForce = 0;
-        // make sure I got a number!
-        if (myElementalPowerRating != NaN) {
+        if (myElementalPowerRating != NaN) { // make sure I got a number!
             maxElementalForce = myElementalPowerRating * me_ThePlayer1CharacterHero.maxMassToBeForceHeld[obj.elementType] * me_ThePlayer1CharacterHero.massControlPercent; //obj.mass; // this is the max force that I can issue against this element type
         }
-        if (me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady == true) {
-            // There are two situations I will run into right now
-            // if the obj is on the ground, I need to lift it up with an acceleration force up
-            // if the obj is falling, I need to decelerate it and then hold it steady
-            // I want to exert a force only if the obj isn't moving
-            // I would like the falling/rising object to slowly settle into 0 velocity position with no oscillation at first
-            // I need to know what the height of the object was that I want to hold steady. Then I can work towards getting the object near that height
+        if (me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady == true) { // if I'm trying to hold the object steady where it's at
             if (maxElementalForce > obj.mass * GRAVITY) { // If I'm able to hold the object up and steady
-                if (obj.holdObjSteadyAtThisHeightInMeters == 0) {
-                    obj.holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
-                }
-                // if the obj rose or fell at 1/3rd a meter from where I tried to stop it, reset the stopping point
-                if (Math.abs(obj.holdObjSteadyAtThisHeightInMeters - obj.objMetersAboveGround) > 0.3) {
-                    obj.holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
-                }
-
                 var v = 2; // If the object is moving faster than 2m/s, I'll apply a max force. Otherwise, I'll apply a negative linear force based on the object's velocity.
-                if (obj.objVelocity < -v) {
+                if (obj.objVelocity_y < -v) { // if the object is moving down faster than v m/s
                     me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
-                } else if (obj.objVelocity > v) {
+                } else if (obj.objVelocity_y > v) { // if the object is moving up faster than v m/s
                     me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
                 } else {
-                    me_ThePlayer1CharacterHero.exertingForce = obj.mass*GRAVITY - (maxElementalForce / v) * obj.objVelocity;
+                    me_ThePlayer1CharacterHero.exertingForce = obj.mass*GRAVITY - (maxElementalForce / v) * obj.objVelocity_y; // linear oscillation dampening equation based on speed
                 }
-
-            } else { // the object's mass is too large to hold steady
-                // give it everything I've got
-                if (obj.objVelocity <= 0) { // if obj is falling or still, provide upward force
+            } else { // if the object's mass is too large to hold steady or support, give it everything I've got
+                if (obj.objVelocity_y <= 0) { // if obj is falling or still, provide upward force
                     me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
                 } else { // if obj is moving up, try to slow it down
                     me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
@@ -325,7 +329,7 @@ function sumOfForces(obj) {
 var GRAVITY = 10;//m/s^2
 
 // call gravity on an obj to make sure it falls towards earth
-function gravity(obj) {
+function forces_y(obj) {
     // I need to convert obj height from pixels to meters before applying kinematic laws:
     // var objPixelHeight_y = obj.objHeight(); // this is height in pixels from the top of the screen. I would like height in meters from the ground
     // constant acceleration kinematic equations
@@ -334,9 +338,9 @@ function gravity(obj) {
     // Ground is 0m above ground for now.
 
     // calculate sum of accelerations on the object before updating the initial velocity
-    var sumOfAccelerations_y = sumOfForces(obj) / obj.mass;
+    var sumOfAccelerations_y = sumOfForces_y(obj) / obj.mass;
     // Now update the initial velocity
-    var objInitialVelocity_y = obj.objVelocity; // I'll keep this in meters/sec all the time
+    var objInitialVelocity_y = obj.objVelocity_y; // I'll keep this in meters/sec all the time
 
     // The finalVelocity is needed to keep track of the correct objInitialVelocity_y
     // var finalVelocity_y = objInitialVelocity_y + sumOfAccelerations_y * deltaTime;
@@ -364,41 +368,79 @@ function gravity(obj) {
         finalVelocity_y = 0;
     }
     obj.y = finalObjPixelHeight_y; // obj.y needs to be the very bottom y position of the obj
-    obj.objVelocity = finalVelocity_y;
+    obj.objVelocity_y = finalVelocity_y;
     obj.objMetersAboveGround = finalPosition_y; // I need to update the obj height above ground
 }
 
+function sumOfForces_x(obj) {
+    if (me_ThePlayer1CharacterHero.tryingToForceObjLeft == true) {
+        obj.x -= 1;
+    } else if (me_ThePlayer1CharacterHero.tryingToForceObjRight == true) {
+        obj.x += 1;
+    }
+}
 
+function sumOfForces_z(obj) {
+    if (me_ThePlayer1CharacterHero.tryingToForceObjForward == true) {
+        obj.z += 1;
+    } else if (me_ThePlayer1CharacterHero.tryingToForceObjBack == true) {
+        obj.z -= 1;
+    }
+}
+
+// currently, the x direction that an object is moving in is relative to the world, not player 1 and the screen x
+function forces_x(obj) {
+    // var objInitialVelocity_x = obj.objVelocity_x;
+    // var sumOfAccelerations_x = 
+    sumOfForces_x(obj);// / obj.mass;
+
+}
+
+function forces_z(obj) {
+    // var objInitialVelocity_z = obj.objVelocity_z;
+    // var sumOfAccelerations_z = 
+    sumOfForces_z(obj);// / obj.mass;
+
+}
+
+function forces(obj) {
+    forces_y(obj); // calculate gravity and other vertical y forces on the objects, and update obj's y, objVelocity_y, and objMetersAboveGround values
+    forces_x(obj); // determine forces, positions, and velocities of the objects in the x direction
+    forces_z(obj);
+}
 
 
 
 // elementType="Water", Rock, Fire, air, metal, electricity, laser
 
 // draw an circle/ball to the canvas:
-function ballComponent(x, y, radius, color, filled=true, mass=50, elementType="water", objVelocity=0, objMetersAboveGround=4) {
+function ballComponent(x=100, y=200, z=0, radius, color, filled=true, mass=50, elementType="water", objMetersAboveGround=4) {
     this.objMetersAboveGround = objMetersAboveGround;
-    this.objVelocity = objVelocity;
+    this.objVelocity_y = 0;
+    this.objVelocity_x = 0;
+    this.objVelocity_z = 0;
     this.elementType = elementType;
     this.isUnderMyControl = false;
-    // this.gravity = gravity; // default 10m/s^2
     this.mass = mass; // this is the mass of the ball in Kg
-    // this.weight = this.mass * 10; // default weight is 300N
     this.x = x;
     this.y = y;
+    this.z = z;
     this.radius = radius;
     this.objHeight = function() {return this.y + this.radius;};
     this.filled = filled;
-    this.holdObjSteadyAtThisHeightInMeters = 0; // Use this to keep track of where the obj should stay at when being held steady
+    
     // update is needed for redrawing the component to the canvas every tick
     this.update = function() {
-        ctx = myGameArea.context;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(this.x-this.radius, this.y-this.radius, this.radius, 0, 2 * Math.PI);
-        if (this.filled == true) {
-            ctx.fill();
-        } else {
-            ctx.stroke();
+        if (this.radius - this.z > 1) { // if the object isn't too far away, draw it
+            ctx = myGameArea.context;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(this.x-this.radius, this.y-this.radius, this.radius - this.z, 0, 2 * Math.PI);
+            if (this.filled == true) {
+                ctx.fill();
+            } else {
+                ctx.stroke();
+            }
         }
     }
     // this.gravityUpdate = function() {
@@ -409,9 +451,11 @@ function ballComponent(x, y, radius, color, filled=true, mass=50, elementType="w
 }
 
 // draw a square/rectangle/block to canvas
-function blockComponent(x, y, width, height, color, mass=100, elementType="rock", objVelocity=0, objMetersAboveGround=4) {
+function blockComponent(x=200, y=300, z=0, width, height, color, mass=100, elementType="rock", objMetersAboveGround=4) {
     this.objMetersAboveGround = objMetersAboveGround;
-    this.objVelocity = objVelocity;
+    this.objVelocity_y = 0;
+    this.objVelocity_x = 0;
+    this.objVelocity_z = 0;
     this.elementType = elementType;
     this.isUnderMyControl = false;
     this.mass = mass; // this is the mass of the block in Kg
@@ -419,13 +463,15 @@ function blockComponent(x, y, width, height, color, mass=100, elementType="rock"
     this.height = height;
     this.x = x;
     this.y = y;
+    this.z = z;
     this.objHeight = function() {return this.y + this.height;};
-    this.holdObjSteadyAtThisHeightInMeters = 0; // Use this to keep track of where the obj should stay at when being held steady
     this.color = color;
     this.update = function() {
-        ctx = myGameArea.context;
-        ctx.fillStyle = color;
-        ctx.fillRect(this.x-this.width, this.y-this.height, this.width, this.height);
+        if (this.width - this.z > 1 || this.height - this.z > 1) { // if the object isn't too far away, draw it
+            ctx = myGameArea.context;
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x-this.width, this.y-this.height, this.width - this.z, this.height - this.z);
+        }
     }
 }
 
