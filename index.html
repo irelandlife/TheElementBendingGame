@@ -293,22 +293,15 @@ function sumOfForces(obj) {
                     obj.holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
                 }
 
-                // PID
-                if (obj.objMetersAboveGround < obj.holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point
-                    if (obj.objVelocity > -0.01) { // if obj is moving up, I want to cancel gravity's force to give constant velocity
-                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // constant force against gravity did much better than: maxElementalForce;
-                    } else if (obj.objVelocity == 0) { // if obj is moving up, I want to cancel gravity's force to give constant velocity
-                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // constant force against gravity did much better than: maxElementalForce;
-                    } else { // if obj is moving down
-                        me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
-                    }
-                } else  { //if (obj.objMetersAboveGround > holdObjSteadyAtThisHeightInMeters) { // if the object is above the hold obj steady point
-                    if (obj.objVelocity > -0.01) { // if obj is moving up, I only want to apply a negative force
-                        me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce; // apply max negative force
-                    } else { // if obj is moving down or still
-                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // apply up force to cancel gravity and try and get constant velocity
-                    }
+                var v = 2; // If the object is moving faster than 2m/s, I'll apply a max force. Otherwise, I'll apply a negative linear force based on the object's velocity.
+                if (obj.objVelocity < -v) {
+                    me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
+                } else if (obj.objVelocity > v) {
+                    me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
+                } else {
+                    me_ThePlayer1CharacterHero.exertingForce = obj.mass*GRAVITY - (maxElementalForce / v) * obj.objVelocity;
                 }
+
             } else { // the object's mass is too large to hold steady
                 // give it everything I've got
                 if (obj.objVelocity <= 0) { // if obj is falling or still, provide upward force
@@ -374,6 +367,8 @@ function gravity(obj) {
     obj.objVelocity = finalVelocity_y;
     obj.objMetersAboveGround = finalPosition_y; // I need to update the obj height above ground
 }
+
+
 
 
 
