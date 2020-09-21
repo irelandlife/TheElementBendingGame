@@ -56,17 +56,13 @@ function startGame() {
     me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero();
 
     // create a few game objs
-    block1 = new blockComponent(100, 320, 30, 30, "red");
-    block2 = new blockComponent(220, 200, 50, 50, "blue");
-    ball1 = new ballComponent(600, 300, 50, "red");
+    block1 = new blockComponent(100, 320, 30, 30, "red", 100, "fire");
+    block2 = new blockComponent(220, 200, 50, 50, "gray", 150, "metal");
+    ball1 = new ballComponent(600, 300, 50, "blue", true, 50, "water");
 
-    controllableGameObjs["block1"] = block1; // .push(block1);
+    controllableGameObjs["block1"] = block1;
     controllableGameObjs["block2"] = block2;
     controllableGameObjs["ball1"] = ball1;
-    
-
-    // I would like to have gravity turned on by default. Then if I control an obj, I'll just make sure that obj isn't affected by gravity while it's levitating
-    // Turn on gravity for all noncontrolled objs:
 }
 
 // any game obj that I can potentially control should be in here.
@@ -77,36 +73,19 @@ var controllableGameObjs = {};
 function updateGameArea() {
     myGameArea.clear(); // clear the screen before updating obj positions and calling update on the moved objs.
 
-
-    // Determine what action to perform on what obj
-    // ball1.y += 10;
-    // if (ball1.x > 1200) {
-    //     ball1.x = 50;
-    // }
-
-    // // Determine which objs need to fall b/c of gravity
-    // // I need a list of all 
-    // if (ball1.isUnderMyControl == true) {
-    //     // if my specific power is strong enough to force control pick up, decelerate a moving obj, or hold an obj that was already in the air,
-    //     // then I can control it with my force power.
-    // } else {
-    // }
+    // How should I determine how an object knows the player wants to control it.
+    // I would like to control the elements in a variety of ways. Like making walls or picking up mounds of dirt.
+    // I need a way to be able to control only a single specific chunk/ball/group of elements, as well as those in front of me, and those all around me.
+    // I would also like to be able to move objects left and right (x axis), as well as in front and behind me (along the z axis).
+    // It would also be cool to precisely control the direction of the element chunk. I can think of how I might build a glove or one handed controller to
+    // control things later. Currently, I need to incorporate non vertical forces on the elements, each with their own buttons
 
     // Tell the ball1 that player1 is actively trying to control it
     ball1.isUnderMyControl = true;
     block1.isUnderMyControl = true;
     block2.isUnderMyControl = true;
     me_ThePlayer1CharacterHero.objImControlling = ball1;
-
-
-
-    // controllableGameObjs["ball1"].isUnderMyControl = true;
-
-    // I would like to calculate a sum of forces rather than just gravity:
-    // sumOfForces(ball1);
-    // sumOfForces(block1);
-    // sumOfForces(block2);
-
+    
 
     // Calculate gravity for every obj:
     // If the obj moved, update the drawing for ball1:
@@ -114,7 +93,6 @@ function updateGameArea() {
     gravity(block1);
     gravity(block2);
     
-
 
     // Update all the objs that were or will be visible (so that they can get redrawn to the screen) after every clear screen call
     ball1.update();
@@ -153,12 +131,22 @@ function me_ThePlayer1CharacterHero(x=0, y=0, z=0, hipRotationY=0, leftArmAiming
     this.mass = mass;
     this.tryingToForceHoldObjSteady = false;
     this.tryingToForceLiftObjUp = false;
-    this.tryingToForceThrowingObjDown = false;
+    this.tryingToForceThrowObjDown = false;
     this.exertingForce = 0; // this should change as I try to change what i want to do. the exertingForce should increase when I want to throw something up
     this.objImControlling = null;
     this.myElementSkillSet = {water: 20, fire: 20, ice: 20, air: 20, rock: 20, metal: 20, electricity: 20, laser: 20};
     this.maxMassToBeForceHeld = {water: 100, fire: 100, ice: 100, air: 100, rock: 100, metal: 100, electricity: 100, laser: 100}; // this gets larger as the player levels up/masters the elements
     this.massControlPercent = 1; // percent/100 from 0 to 1. Controls how much mass max I want to be able to hold steady
+    this.tryingToForceObjLeft = false;
+    this.tryingToForceObjRight = false;
+    this.tryingToForceObjForward = false;
+    this.tryingToForceObjBack = false;
+    this.moveForward = false;
+    this.moveBackward = false;
+    this.moveLeft = false;
+    this.moveRight = false;
+    this.rotateLeft = false;
+    this.rotateRight = false;
     // this.ctx = myGameArea.context;
     // I'm not going to draw the player character to the screen for now since I want this to be a 1st person game
     // I will work on drawing the arms to the screen later. And I will later determine how to calculate where the player
@@ -190,41 +178,67 @@ function keyWasPressed(event) {
         me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady = true;
     } else if (pressedKey == 'e') { // lift and accel the obj in the air
         me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = true;
-        // me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
     } else if (pressedKey == 'f') { // throw the obj down
-        me_ThePlayer1CharacterHero.tryingToForceThrowingObjDown = true;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
-    } else if (pressedKey == '1') { // throw the obj down
+        me_ThePlayer1CharacterHero.tryingToForceThrowObjDown = true;
+    }
+    // adjust the amount of mass that is to be steadily controlled:
+    else if (pressedKey == '1') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.1;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '2') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.2;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '3') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.3;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '4') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.4;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '5') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.5;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '6') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.6;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '7') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.7;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '8') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.8;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '9') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 0.9;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
     } else if (pressedKey == '0') { // throw the obj down
         me_ThePlayer1CharacterHero.massControlPercent = 1;
-        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
-    } else {
+    } 
+    // when the player tries to move the object in non y direction:
+    // In order to know what direction I want the objects to move in, everything will be
+    // relevant to where the player1 is looking. To accelerate an object to the left means I would need
+    // to be looking in some direction, and have control of a substance. Then, I would apply a constant force
+    // on the object. The y axis was universal for gravity and rising forces, but the l/r x and f/b z axis change w player1
+    // If I am still trying to hold an object steady after I move it left/R or F/B, I would like it to decelerate in the same way
+    // as it does when up/down. 
+    else if (pressedKey == 'j') { // accelerate obj left
+        me_ThePlayer1CharacterHero.tryingToForceObjLeft = true;
+    } else if (pressedKey == 'k') { // accel obj right
+        me_ThePlayer1CharacterHero.tryingToForceObjRight = true;
+    } else if (pressedKey == 'i') { // accel obj forward
+        me_ThePlayer1CharacterHero.tryingToForceObjForward = true;
+    } else if (pressedKey == ',') { // accel obj back
+        me_ThePlayer1CharacterHero.tryingToForceObjBack = true;
+    } 
+
+    // I think I would like to be able to move/rotate the character with the joysticks
+    else if (keyCode == 38) { // move forward
+        me_ThePlayer1CharacterHero.moveForward = true;
+    } else if (keyCode == 40) { // move back
+        me_ThePlayer1CharacterHero.moveBackward = true;
+    } else if (keyCode == 37) { // move left
+        me_ThePlayer1CharacterHero.moveLeft = true;
+    } else if (keyCode == 39) { // move right
+        me_ThePlayer1CharacterHero.moveRight = true;
+    } 
+    // rotate:
+    else if (keyCode == 37) { // rotate left
+        me_ThePlayer1CharacterHero.rotateLeft = true;
+    } else if (keyCode == 39) { // rotate right
+        me_ThePlayer1CharacterHero.rotateRight = true;
+    } 
+    // In order to accelerate player1 up, they need to use their force to accelerate the earth or something touching the ground downward
+
+    else {
         console.log("A key was pressed");
         console.log(pressedKey);
         console.log("The keyCode is:");
@@ -232,10 +246,12 @@ function keyWasPressed(event) {
     }
 }
 
+
+
 function keyWasReleased(event) {
     me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady = false;
     me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = false;
-    me_ThePlayer1CharacterHero.tryingToForceThrowingObjDown = false;
+    me_ThePlayer1CharacterHero.tryingToForceThrowObjDown = false;
     me_ThePlayer1CharacterHero.exertingForce = 0;
     var keyCode = event.keyCode;
     if (keyCode >= 65 && keyCode <= 90) {
@@ -250,7 +266,7 @@ function keyWasReleased(event) {
         // console.log("key was released")
 }
 
-// var holdObjSteadyAtThisHeightInMeters = 0;
+// I would like to make sure that objects with low masses don't oscillate rapidly when I try to hold them steady
 
 function sumOfForces(obj) {
     if (obj.isUnderMyControl == true) { // if I have an obj under my control, make sure the exertingForce is correct given the input
@@ -269,33 +285,27 @@ function sumOfForces(obj) {
             // I would like the falling/rising object to slowly settle into 0 velocity position with no oscillation at first
             // I need to know what the height of the object was that I want to hold steady. Then I can work towards getting the object near that height
             if (maxElementalForce > obj.mass * GRAVITY) { // If I'm able to hold the object up and steady
-
                 if (obj.holdObjSteadyAtThisHeightInMeters == 0) {
                     obj.holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
                 }
-                // if the obj raised or fell at 1/3rd a meter from where I tried to stop it, reset the stopping point
+                // if the obj rose or fell at 1/3rd a meter from where I tried to stop it, reset the stopping point
                 if (Math.abs(obj.holdObjSteadyAtThisHeightInMeters - obj.objMetersAboveGround) > 0.3) {
                     obj.holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
                 }
 
-                // PID...I also need to keep track of velocity
+                // PID
                 if (obj.objMetersAboveGround < obj.holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point
-                    if (obj.objVelocity > 0) { // if obj is moving up, I only want to apply a negative force that gets weaker as the obj is closer to the line
-                        // var distanceAwayInMeters = Math.abs(obj.objMetersAboveGround - holdObjSteadyAtThisHeightInMeters);
-                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; //I'll try constant v//-1*maxElementalForce;
+                    if (obj.objVelocity >= -0.1) { // if obj is moving up, I want to cancel gravity's force to give constant velocity
+                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // constant force against gravity did much better than: maxElementalForce;
                     } else { // if obj is moving down
                         me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
                     }
                 } else  { //if (obj.objMetersAboveGround > holdObjSteadyAtThisHeightInMeters) { // if the object is above the hold obj steady point
-                    if (obj.objVelocity > 0) { // if obj is moving up, I only want to apply a negative force
-                        // var distanceAwayInMeters = Math.abs(obj.objMetersAboveGround - holdObjSteadyAtThisHeightInMeters);
-                        // me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; //I'll try constant v//-1*maxElementalForce;
+                    if (obj.objVelocity > -0.1) { // if obj is moving up, I only want to apply a negative force
                         me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce; // apply max negative force
-                    } else { // if obj is moving down
-                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass;
-                        // me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
+                    } else { // if obj is moving down or still
+                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // apply up force to cancel gravity and try and get constant velocity
                     }
-                    // me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
                 }
             } else { // the object's mass is too large to hold steady
                 // give it everything I've got
@@ -305,30 +315,14 @@ function sumOfForces(obj) {
                     me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
                 }
             }
-            //  else if (obj.objMetersAboveGround == holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point, add a positive force
-            //     me_ThePlayer1CharacterHero.exertingForce = GRAVITY*obj.mass;
-            // }
-
-            // if (obj.objVelocity > 0) {
-            //     me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
-            // } else if (obj.objVelocity < 0) {
-            //     me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
-            // }
-            //     me_ThePlayer1CharacterHero.exertingForce = maxElementalForce * -1*obj.objVelocity / Math.abs(obj.objVelocity);
-            // } else { // if the obj is moving very slow
-            // if (obj.objVelocity == 0) {
-            //     obj.objVelocity = 0;
-            //     me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass;                
-            // }
         } else if (me_ThePlayer1CharacterHero.tryingToForceLiftObjUp == true) {
             me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
-        } else if (me_ThePlayer1CharacterHero.tryingToForceThrowingObjDown == true) { // throw the obj down
+        } else if (me_ThePlayer1CharacterHero.tryingToForceThrowObjDown == true) { // throw the obj down
             me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
         } else {
             me_ThePlayer1CharacterHero.exertingForce = 0;
         }
         return -1*GRAVITY*obj.mass + me_ThePlayer1CharacterHero.exertingForce;
-        // obj.isUnderMyControl = false;
     }
     return -1*GRAVITY*obj.mass; // gravity down is the default option
 }
@@ -339,12 +333,14 @@ var GRAVITY = 10;//m/s^2
 function gravity(obj) {
     // I need to convert obj height from pixels to meters before applying kinematic laws:
     // var objPixelHeight_y = obj.objHeight(); // this is height in pixels from the top of the screen. I would like height in meters from the ground
+    // constant acceleration kinematic equations
     // Determine the height from the ground in meters:
     var objMetersAboveGround_y = obj.objMetersAboveGround;// the obj itself needs to keep track of how high it is off the ground in meters
     // Ground is 0m above ground for now.
 
-    var sumOfAccelerations_y = sumOfForces(obj) / obj.mass; // make sure this is correct
-
+    // calculate sum of accelerations on the object before updating the initial velocity
+    var sumOfAccelerations_y = sumOfForces(obj) / obj.mass;
+    // Now update the initial velocity
     var objInitialVelocity_y = obj.objVelocity; // I'll keep this in meters/sec all the time
 
     // The finalVelocity is needed to keep track of the correct objInitialVelocity_y
