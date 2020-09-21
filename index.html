@@ -49,11 +49,15 @@
 <!-- document.getElementById('tagName').setAttribute('onkeydown', 'keyWasPressed(event)'); This allows key presses to be listed for after start is pressed-->
 
 <script>
+
+var hero = null;
+
 function startGame() {
     myGameArea.start();
 
     // creates the player hero char:
-    me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero(0, 0, -6);
+    me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero(0, 0, -60);
+    hero = me_ThePlayer1CharacterHero;
 
     // create a few game objs
     block1 = new blockComponent(100, 320, 0, 30, 30, "red", 10, "fire");
@@ -103,7 +107,7 @@ function updateGameArea() {
 }
 
 
-
+// I need to know how far away the object is to me, so I can determine how much force should be applied. More force can be applied when closer in general.
 
 
 function me_ThePlayer1CharacterHero(x=0, y=0, z=-6, hipRotationY=0, leftArmAimingX=0, leftArmAimingY=screen.availHeight, rightArmAimingX=screen.width, rightArmAimingY=screen.availHeight, mass=100, waterForcePower=0, fireForcePower=0, airForcePower=0, rockForcePower=0, metalForcePower=0, electricityForcePower=0, laserForcePower=0, staminaEnergy=100, punchingPower=10, flyingSpeed=0, flyingAcceleration=0, runningSpeed=10, runningAcceleration=10, jumpingHeight=1, swimmingSpeed=1) {
@@ -251,14 +255,14 @@ function keyWasPressed(event) {
 
 
 function keyWasReleased(event) {
-    me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady = false;
-    me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = false;
-    me_ThePlayer1CharacterHero.tryingToForceThrowObjDown = false;
-    me_ThePlayer1CharacterHero.exertingForce = 0;
-    me_ThePlayer1CharacterHero.tryingToForceObjLeft = false;
-    me_ThePlayer1CharacterHero.tryingToForceObjRight = false;
-    me_ThePlayer1CharacterHero.tryingToForceObjForward = false;
-    me_ThePlayer1CharacterHero.tryingToForceObjBack = false;
+    // me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady = false;
+    // me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = false;
+    // me_ThePlayer1CharacterHero.tryingToForceThrowObjDown = false;
+    // me_ThePlayer1CharacterHero.exertingForce = 0;
+    // me_ThePlayer1CharacterHero.tryingToForceObjLeft = false;
+    // me_ThePlayer1CharacterHero.tryingToForceObjRight = false;
+    // me_ThePlayer1CharacterHero.tryingToForceObjForward = false;
+    // me_ThePlayer1CharacterHero.tryingToForceObjBack = false;
 
     var keyCode = event.keyCode;
     if (keyCode >= 65 && keyCode <= 90) {
@@ -271,7 +275,27 @@ function keyWasReleased(event) {
     //     }
     // }
     // stop moving:
-    if (keyCode == 38) { // stop move forward
+
+    if (releasedKey == 'd') { // decelerate the obj and hold the obj steady
+        // console.log("d was released");
+        me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady = false;
+    } else if (releasedKey == 'e') { // lift and accel the obj in the air
+        me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = false;
+    } else if (releasedKey == 'f') { // throw the obj down
+        me_ThePlayer1CharacterHero.tryingToForceThrowObjDown = false;
+    }
+
+    else if (releasedKey == 'j') { // accelerate obj left
+        me_ThePlayer1CharacterHero.tryingToForceObjLeft = false;
+    } else if (releasedKey == 'k') { // accel obj right
+        me_ThePlayer1CharacterHero.tryingToForceObjRight = false;
+    } else if (releasedKey == 'i') { // accel obj forward
+        me_ThePlayer1CharacterHero.tryingToForceObjForward = false;
+    } else if (keyCode == 188) { // accel obj back
+        me_ThePlayer1CharacterHero.tryingToForceObjBack = false;
+    } 
+    
+    else if (keyCode == 38) { // stop move forward
         me_ThePlayer1CharacterHero.moveForward = false;
     } else if (keyCode == 40) { // stop move back
         me_ThePlayer1CharacterHero.moveBackward = false;
@@ -356,7 +380,7 @@ function forces_y(obj) {
     // I can figure out where it's located in pixels:
     var numPixels_y = myGameArea.canvasHeight;
     // var ball_x // determine how far the ball is from my eyes and then update 6 meters to the correct distance the ball is from my eyes
-    var finalObjPixelHeight_y = numPixels_y+(-1*numPixels_y/6)*finalPosition_y; // assuming the ball's x position is 6m away from me
+    var finalObjPixelHeight_y = numPixels_y+(-1*numPixels_y/heroDistanceToObj(obj))*finalPosition_y; // assuming the ball's x position is 6m away from me
 
     // now I can update objHeight_y and velocity if they aren't going to hit the ground. Otherwise, I need to draw them on the ground
     if (finalObjPixelHeight_y >= myGameArea.canvasHeight) {
@@ -364,7 +388,7 @@ function forces_y(obj) {
         // If the ball would go past the canvas ground if it wasn't for me:
         // set the ball on the ground with no bounce:
         finalObjPixelHeight_y = myGameArea.canvasHeight-numPixelsAboveGround;
-        finalPosition_y = numPixelsAboveGround/(numPixels_y+(-1*numPixels_y/6));
+        finalPosition_y = numPixelsAboveGround/(numPixels_y+(-1*numPixels_y/heroDistanceToObj(obj)));
         finalVelocity_y = 0;
     }
     obj.y = finalObjPixelHeight_y; // obj.y needs to be the very bottom y position of the obj
@@ -475,6 +499,12 @@ function blockComponent(x=200, y=300, z=0, width, height, color, mass=100, eleme
     }
 }
 
+function heroDistanceToObj(obj) {
+    return Math.max(obj.z - hero.z, 5);
+    // return ((obj.x-hero.x)**2 + (obj.y-hero.y)**2 + (obj.z-hero.z)**2)**0.5;
+}
+
+
 var screenHeightPercent = 0.80;
 var screenWidthPercent = 0.90;
 
@@ -496,6 +526,7 @@ var myGameArea = {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height); // clear the entire canvas
     }
 }
+
 
 var _50FPS = 20; // 1/(20*10^-3) == 50 FPS == 1/20ms
 // var _40FPS = 25;
