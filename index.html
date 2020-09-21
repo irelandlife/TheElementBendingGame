@@ -157,6 +157,8 @@ function me_ThePlayer1CharacterHero(x=0, y=0, z=0, hipRotationY=0, leftArmAiming
     this.exertingForce = 0; // this should change as I try to change what i want to do. the exertingForce should increase when I want to throw something up
     this.objImControlling = null;
     this.myElementSkillSet = {water: 20, fire: 20, ice: 20, air: 20, rock: 20, metal: 20, electricity: 20, laser: 20};
+    this.maxMassToBeForceHeld = {water: 100, fire: 100, ice: 100, air: 100, rock: 100, metal: 100, electricity: 100, laser: 100}; // this gets larger as the player levels up/masters the elements
+    this.massControlPercent = 1; // percent/100 from 0 to 1. Controls how much mass max I want to be able to hold steady
     // this.ctx = myGameArea.context;
     // I'm not going to draw the player character to the screen for now since I want this to be a 1st person game
     // I will work on drawing the arms to the screen later. And I will later determine how to calculate where the player
@@ -171,6 +173,9 @@ function me_ThePlayer1CharacterHero(x=0, y=0, z=0, hipRotationY=0, leftArmAiming
     // }
 }
 
+// I need a way to adjust how much mass I want to be able to control. I will be doing this with the controller, so I can use a few buttons for now. 10 to 100% 
+
+
 
 // When I press the d key, I would like to increase the vertical acceleration on the circle ball1
 function keyWasPressed(event) {
@@ -179,31 +184,52 @@ function keyWasPressed(event) {
     if (keyCode >= 65 && keyCode <= 90) {
         keyCode +=32;
     }    
-
     var pressedKey = String.fromCharCode(keyCode);  //String.fromCodePoint(x);     // Convert the value into a character
-    
-    // var obj = me_ThePlayer1CharacterHero.objImControlling;
-
-    // if (obj != null) { // if obj exists, check which key was pressed
-        // determine how powerful I am against the object given its type
-        
     if (pressedKey == 'd') { // decelerate the obj and hold the obj steady
         // console.log("d was pressed");
         me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady = true;
-    }
-    if (pressedKey == 'e') { // lift and accel the obj in the air
+    } else if (pressedKey == 'e') { // lift and accel the obj in the air
         me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = true;
         // me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
-    }
-    if (pressedKey == 'f') { // throw the obj down
+    } else if (pressedKey == 'f') { // throw the obj down
         me_ThePlayer1CharacterHero.tryingToForceThrowingObjDown = true;
         // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '1') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.1;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '2') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.2;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '3') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.3;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '4') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.4;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '5') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.5;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '6') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.6;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '7') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.7;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '8') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.8;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '9') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 0.9;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else if (pressedKey == '0') { // throw the obj down
+        me_ThePlayer1CharacterHero.massControlPercent = 1;
+        // me_ThePlayer1CharacterHero.exertingForce = -maxElementalForce;
+    } else {
+        console.log("A key was pressed");
+        console.log(pressedKey);
+        console.log("The keyCode is:");
+        console.log(keyCode);
     }
-    // }
-    // console.log(chrCode)
-    // console.log("a key was pressed");
-    // console.log(pressedKey)
-    // console.log(keyCode)
 }
 
 function keyWasReleased(event) {
@@ -211,8 +237,18 @@ function keyWasReleased(event) {
     me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = false;
     me_ThePlayer1CharacterHero.tryingToForceThrowingObjDown = false;
     me_ThePlayer1CharacterHero.exertingForce = 0;
-    // console.log("key was released")
+    var keyCode = event.keyCode;
+    if (keyCode >= 65 && keyCode <= 90) {
+        keyCode +=32;
+    }    
+    var pressedKey = String.fromCharCode(keyCode);  //String.fromCodePoint(x);     // Convert the value into a character
+    if (pressedKey == 'd') {
+        holdObjSteadyAtThisHeightInMeters = 0;
+    }
+        // console.log("key was released")
 }
+
+var holdObjSteadyAtThisHeightInMeters = 0;
 
 function sumOfForces(obj) {
     if (obj.isUnderMyControl == true) { // if I have an obj under my control, make sure the exertingForce is correct given the input
@@ -221,7 +257,7 @@ function sumOfForces(obj) {
         var maxElementalForce = 0;
         // make sure I got a number!
         if (myElementalPowerRating != NaN) {
-            maxElementalForce = myElementalPowerRating * obj.mass; // this is the max force that I can issue against this element type
+            maxElementalForce = myElementalPowerRating * me_ThePlayer1CharacterHero.maxMassToBeForceHeld[obj.elementType] * me_ThePlayer1CharacterHero.massControlPercent; //obj.mass; // this is the max force that I can issue against this element type
         }
         if (me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady == true) {
             // There are two situations I will run into right now
@@ -229,25 +265,55 @@ function sumOfForces(obj) {
             // if the obj is falling, I need to decelerate it and then hold it steady
             // I want to exert a force only if the obj isn't moving
             // I would like the falling/rising object to slowly settle into 0 velocity position with no oscillation at first
-            // +/-6 should be the distance calculated in meters from the object in terms of m/s
-            if (obj.objVelocity > 6 || obj.objVelocity < -6) { // if the obj is moving fast:
-                // if (obj.objVelocity > 6) { // fast upward
-                //     // If this gets executed, I need to make sure it gets executed again 
-                //     me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
-                //     // I need exertingForce to change to Gravity * mass when V == 0
-                //     console.log("v > 5m/s")
-                // }
-                // if (obj.objVelocity < -6) { // fast downward
-                //     me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
-                //     console.log("v < 5m/s")
-                // }
-                console.log("fast object")
-                me_ThePlayer1CharacterHero.exertingForce = maxElementalForce * -1*obj.objVelocity / Math.abs(obj.objVelocity);
+            // I need to know what the height of the object was that I want to hold steady. Then I can work towards getting the object near that height
+            if (maxElementalForce > obj.mass * GRAVITY) { // If I'm able to hold the object up and steady
 
-            } else { // if the obj is moving very slow
-                obj.objVelocity = 0;
-                me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass;                
+                if (holdObjSteadyAtThisHeightInMeters == 0) {
+                    holdObjSteadyAtThisHeightInMeters = obj.objMetersAboveGround;
+                }
+
+                // PID...I also need to keep track of velocity
+                if (obj.objMetersAboveGround < holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point
+                    if (obj.objVelocity > 0) { // if obj is moving up, I only want to apply a negative force that gets weaker as the obj is closer to the line
+                        // var distanceAwayInMeters = Math.abs(obj.objMetersAboveGround - holdObjSteadyAtThisHeightInMeters);
+                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; //I'll try constant v//-1*maxElementalForce;
+                    } else { // if obj is moving down
+                        me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
+                    }
+                } else  { //if (obj.objMetersAboveGround > holdObjSteadyAtThisHeightInMeters) { // if the object is above the hold obj steady point
+                    if (obj.objVelocity > 0) { // if obj is moving up, I only want to apply a negative force
+                        // var distanceAwayInMeters = Math.abs(obj.objMetersAboveGround - holdObjSteadyAtThisHeightInMeters);
+                        // me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; //I'll try constant v//-1*maxElementalForce;
+                        me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce; // apply max negative force
+                    } else { // if obj is moving down
+                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass;
+                        // me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
+                    }
+                    // me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
+                }
+            } else { // the object's mass is too large to hold steady
+                // give it everything I've got
+                if (obj.objVelocity <= 0) { // if obj is falling or still, provide upward force
+                    me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
+                } else { // if obj is moving up, try to slow it down
+                    me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
+                }
             }
+            //  else if (obj.objMetersAboveGround == holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point, add a positive force
+            //     me_ThePlayer1CharacterHero.exertingForce = GRAVITY*obj.mass;
+            // }
+
+            // if (obj.objVelocity > 0) {
+            //     me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce;
+            // } else if (obj.objVelocity < 0) {
+            //     me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
+            // }
+            //     me_ThePlayer1CharacterHero.exertingForce = maxElementalForce * -1*obj.objVelocity / Math.abs(obj.objVelocity);
+            // } else { // if the obj is moving very slow
+            // if (obj.objVelocity == 0) {
+            //     obj.objVelocity = 0;
+            //     me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass;                
+            // }
         } else if (me_ThePlayer1CharacterHero.tryingToForceLiftObjUp == true) {
             me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
         } else if (me_ThePlayer1CharacterHero.tryingToForceThrowingObjDown == true) { // throw the obj down
