@@ -56,9 +56,9 @@ function startGame() {
     me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero();
 
     // create a few game objs
-    block1 = new blockComponent(100, 320, 30, 30, "red", 100, "fire");
+    block1 = new blockComponent(100, 320, 30, 30, "red", 10, "fire");
     block2 = new blockComponent(220, 200, 50, 50, "gray", 150, "metal");
-    ball1 = new ballComponent(600, 300, 50, "blue", true, 50, "water");
+    ball1 = new ballComponent(600, 300, 50, "blue", true, 80, "water");
 
     controllableGameObjs["block1"] = block1;
     controllableGameObjs["block2"] = block2;
@@ -295,13 +295,15 @@ function sumOfForces(obj) {
 
                 // PID
                 if (obj.objMetersAboveGround < obj.holdObjSteadyAtThisHeightInMeters) { // if the object is below the hold obj steady point
-                    if (obj.objVelocity >= -0.1) { // if obj is moving up, I want to cancel gravity's force to give constant velocity
+                    if (obj.objVelocity > -0.01) { // if obj is moving up, I want to cancel gravity's force to give constant velocity
+                        me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // constant force against gravity did much better than: maxElementalForce;
+                    } else if (obj.objVelocity == 0) { // if obj is moving up, I want to cancel gravity's force to give constant velocity
                         me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // constant force against gravity did much better than: maxElementalForce;
                     } else { // if obj is moving down
                         me_ThePlayer1CharacterHero.exertingForce = maxElementalForce;
                     }
                 } else  { //if (obj.objMetersAboveGround > holdObjSteadyAtThisHeightInMeters) { // if the object is above the hold obj steady point
-                    if (obj.objVelocity > -0.1) { // if obj is moving up, I only want to apply a negative force
+                    if (obj.objVelocity > -0.01) { // if obj is moving up, I only want to apply a negative force
                         me_ThePlayer1CharacterHero.exertingForce = -1*maxElementalForce; // apply max negative force
                     } else { // if obj is moving down or still
                         me_ThePlayer1CharacterHero.exertingForce = GRAVITY * obj.mass; // apply up force to cancel gravity and try and get constant velocity
