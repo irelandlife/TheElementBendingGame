@@ -52,17 +52,21 @@
 
 var hero = null;
 
+// console.log(screen.height)
+// console.log(screen.pixelDepth)
+// console.log(screen.width)
+
 function startGame() {
     myGameArea.start();
 
     // creates the player hero char:
-    me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero(0, 0, -60);
+    me_ThePlayer1CharacterHero = new me_ThePlayer1CharacterHero(0, 0, 4*pixelsPerMeter);
     hero = me_ThePlayer1CharacterHero;
 
     // create a few game objs
-    block1 = new blockComponent(100, 320, 0, 30, 30, "red", 10, "fire");
-    block2 = new blockComponent(220, 200, 0, 50, 50, "gray", 150, "metal");
-    ball1 = new ballComponent(600, 300, 0, 50, "blue", true, 80, "water");
+    block1 = new blockComponent(100, 320, 0, 30, 30, "red", 30, "fire");
+    block2 = new blockComponent(220, 200, 0, 50, 50, "gray", 50, "metal");
+    ball1 = new ballComponent(300, 300, 0, 100, "blue", true, 80, "water");
 
     controllableGameObjs["block1"] = block1;
     controllableGameObjs["block2"] = block2;
@@ -109,8 +113,10 @@ function updateGameArea() {
 
 // I need to know how far away the object is to me, so I can determine how much force should be applied. More force can be applied when closer in general.
 
+var pixelsPerMeter = 4440;
+var metersPerPixel = 1/4440;
 
-function me_ThePlayer1CharacterHero(x=0, y=0, z=-6, hipRotationY=0, leftArmAimingX=0, leftArmAimingY=screen.availHeight, rightArmAimingX=screen.width, rightArmAimingY=screen.availHeight, mass=100, waterForcePower=0, fireForcePower=0, airForcePower=0, rockForcePower=0, metalForcePower=0, electricityForcePower=0, laserForcePower=0, staminaEnergy=100, punchingPower=10, flyingSpeed=0, flyingAcceleration=0, runningSpeed=10, runningAcceleration=10, jumpingHeight=1, swimmingSpeed=1) {
+function me_ThePlayer1CharacterHero(x=0, y=0, z=3.6*4440, hipRotationY=0, leftArmAimingX=0, leftArmAimingY=screen.availHeight, rightArmAimingX=screen.width, rightArmAimingY=screen.availHeight, mass=100, waterForcePower=0, fireForcePower=0, airForcePower=0, rockForcePower=0, metalForcePower=0, electricityForcePower=0, laserForcePower=0, staminaEnergy=100, punchingPower=10, flyingSpeed=0, flyingAcceleration=0, runningSpeed=10, runningAcceleration=10, jumpingHeight=1, swimmingSpeed=1) {
     this.waterForcePower=waterForcePower;
     this.fireForcePower=fireForcePower;
     this.airForcePower=airForcePower;
@@ -167,8 +173,16 @@ function me_ThePlayer1CharacterHero(x=0, y=0, z=-6, hipRotationY=0, leftArmAimin
     // }
 }
 
-// I need a way to adjust how much mass I want to be able to control. I will be doing this with the controller, so I can use a few buttons for now. 10 to 100% 
-
+// I would like to be able to determine from my left hand which direction the front of my element should be facing, and with my right hand, determine
+// which direction the back of my element should be aiming, so I can propell the element in the direction I've set it up for, and then I'd like to maintain
+// control of it until I release it. 
+// I will need to use much more physics for realistic effects. 
+// I could just have a game where the user doesn't move or rotate (for now), and see how fancy I can get the physics.
+// My current objective is to make sure that objects are moving in the right directions, at the right speeds, and accelerations.
+// I would like to fix x axis forces next.
+// I would also like to start working on propelling objects forward, with accurate forces applied.
+// In order to maintain a strong forceful low density element throw, like with air or fire, I will need to hold the force acceleration the entire time
+// With elements like rock, metal, ice, etc, I 
 
 
 // When I press the d key, I would like to increase the vertical acceleration on the circle ball1
@@ -218,7 +232,7 @@ function keyWasPressed(event) {
     // as it does when up/down. 
     else if (pressedKey == 'j') { // accelerate obj left
         me_ThePlayer1CharacterHero.tryingToForceObjLeft = true;
-    } else if (pressedKey == 'k') { // accel obj right
+    } else if (pressedKey == 'l') { // accel obj right
         me_ThePlayer1CharacterHero.tryingToForceObjRight = true;
     } else if (pressedKey == 'i') { // accel obj forward
         me_ThePlayer1CharacterHero.tryingToForceObjForward = true;
@@ -255,25 +269,14 @@ function keyWasPressed(event) {
 
 
 function keyWasReleased(event) {
-    // me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady = false;
-    // me_ThePlayer1CharacterHero.tryingToForceLiftObjUp = false;
-    // me_ThePlayer1CharacterHero.tryingToForceThrowObjDown = false;
-    // me_ThePlayer1CharacterHero.exertingForce = 0;
-    // me_ThePlayer1CharacterHero.tryingToForceObjLeft = false;
-    // me_ThePlayer1CharacterHero.tryingToForceObjRight = false;
-    // me_ThePlayer1CharacterHero.tryingToForceObjForward = false;
-    // me_ThePlayer1CharacterHero.tryingToForceObjBack = false;
-
     var keyCode = event.keyCode;
     if (keyCode >= 65 && keyCode <= 90) {
         keyCode +=32;
     }    
     var releasedKey = String.fromCharCode(keyCode);  //String.fromCodePoint(x);     // Convert the value into a character
-    // if (releasedKey == 'd') {
     //     for (obj in controllableGameObjs) {
     //         // obj.feature = value
     //     }
-    // }
     // stop moving:
 
     if (releasedKey == 'd') { // decelerate the obj and hold the obj steady
@@ -287,7 +290,7 @@ function keyWasReleased(event) {
 
     else if (releasedKey == 'j') { // accelerate obj left
         me_ThePlayer1CharacterHero.tryingToForceObjLeft = false;
-    } else if (releasedKey == 'k') { // accel obj right
+    } else if (releasedKey == 'l') { // accel obj right
         me_ThePlayer1CharacterHero.tryingToForceObjRight = false;
     } else if (releasedKey == 'i') { // accel obj forward
         me_ThePlayer1CharacterHero.tryingToForceObjForward = false;
@@ -317,10 +320,12 @@ function keyWasReleased(event) {
 function sumOfForces_y(obj) {
     if (obj.isUnderMyControl == true) { // if I have an obj under my control, make sure the exertingForce is correct given the input
         var myElementalPowerRating = me_ThePlayer1CharacterHero.myElementSkillSet[obj.elementType];
-        var maxElementalForce = 0;
-        if (myElementalPowerRating != NaN) { // make sure I got a number!
-            maxElementalForce = myElementalPowerRating * me_ThePlayer1CharacterHero.maxMassToBeForceHeld[obj.elementType] * me_ThePlayer1CharacterHero.massControlPercent; //obj.mass; // this is the max force that I can issue against this element type
-        }
+        // var maxElementalForce = 0;
+        // if (myElementalPowerRating != NaN) { // make sure I got a number!
+        //     maxElementalForce = myElementalPowerRating * me_ThePlayer1CharacterHero.maxMassToBeForceHeld[obj.elementType] * me_ThePlayer1CharacterHero.massControlPercent; //obj.mass; // this is the max force that I can issue against this element type
+        // }
+        var maxElementalForce = myElementalPowerRating * me_ThePlayer1CharacterHero.maxMassToBeForceHeld[obj.elementType] * me_ThePlayer1CharacterHero.massControlPercent;
+        
         if (me_ThePlayer1CharacterHero.tryingToForceHoldObjSteady == true) { // if I'm trying to hold the object steady where it's at
             if (maxElementalForce > obj.mass * GRAVITY) { // If I'm able to hold the object up and steady
                 var v = 2; // If the object is moving faster than 2m/s, I'll apply a max force. Otherwise, I'll apply a negative linear force based on the object's velocity.
@@ -358,7 +363,7 @@ function forces_y(obj) {
     // var objPixelHeight_y = obj.objHeight(); // this is height in pixels from the top of the screen. I would like height in meters from the ground
     // constant acceleration kinematic equations
     // Determine the height from the ground in meters:
-    var objMetersAboveGround_y = obj.objMetersAboveGround;// the obj itself needs to keep track of how high it is off the ground in meters
+    var objMetersAboveGround_y = obj.objMetersAboveGround; // the obj itself needs to keep track of how high it is off the ground in meters
     // Ground is 0m above ground for now.
 
     // calculate sum of accelerations on the object before updating the initial velocity
@@ -370,30 +375,54 @@ function forces_y(obj) {
     // var finalVelocity_y = objInitialVelocity_y + sumOfAccelerations_y * deltaTime;
     var finalVelocity_y = objInitialVelocity_y + sumOfAccelerations_y * deltaTime;
     // The finalPosition_y tells me where's the maximum distance the obj should be (unless there is something under it or a new force on it)
-    var finalPosition_y = objMetersAboveGround_y + objInitialVelocity_y*deltaTime + 0.5*sumOfAccelerations_y*(deltaTime**2);
+    var finalPosition_y_m = objMetersAboveGround_y + objInitialVelocity_y*deltaTime + 0.5*sumOfAccelerations_y*(deltaTime**2);
     
-    // I need to convert finalPosition_y from meters to pixels from the top of the screen
+    // I need to know how close the object is to me as well
+    var distanceFromHeroToObj_m = heroDistanceToObj_m(obj);
+    // var objLengthOnScreen_px = 800/distanceFromHeroToObj_m;
+
+    // I figured out that objects shrink half their size after they move twice the distance away from the user. This line is (1/x)*t where t = 800 given my computer's number
+    // of pixels per meter (4440 pixels/meter)
+    // Changing the 800 value to something else should create different zoom effects
+    obj.lengthOnScreen_px = 800/(Math.max(distanceFromHeroToObj_m, 0.5));
+
+    // var yvirtual_m = (0.5 + distanceFromHeroToObj_m)*(0.362689338); // this tells me about how high up (virtually in meters) the object is off the ground.
+
+    // finalPosition_y_m gives me the height of the obj above the ground (above the bottom of the screen), in meters.
+    // To get the number of pixels from the top of the screen, assuming the bottom of the screen is the ground:
+    
+    // Determine where the object is located on the screen:
+    var theta1 = Math.asin(finalPosition_y_m/(0.5+distanceFromHeroToObj_m));
+    var y1_px = 0.5*Math.tan(theta1) * pixelsPerMeter;
+    var objHeightOnScreen_y_px = myGameArea.canvasHeight - y1_px;
+
+
+    // I need to convert finalPosition_y_m from meters to pixels from the top of the screen
     // I need to know how many meters tall my screen is, what direction/orientation my screen is looking at, where my screen is located, 
     // etc. To simplify the process for a 2d simulation, I will assume basic viewing options for now
     // To determine the obj's final position in pixels, where the bottom of the screen is ground and the top of the screen is some distance above the objs.
     // The obj is going to fall a little bit, if I know how high up it was it meters and in pixels, and I know how many pixels is at the bottom of the screen and 0 meters,
     // I can figure out where it's located in pixels:
-    var numPixels_y = myGameArea.canvasHeight;
+    
     // var ball_x // determine how far the ball is from my eyes and then update 6 meters to the correct distance the ball is from my eyes
-    var finalObjPixelHeight_y = numPixels_y+(-1*numPixels_y/heroDistanceToObj(obj))*finalPosition_y; // assuming the ball's x position is 6m away from me
+    // var finalObjPixelHeight_y = screenHeight+(-1*screenHeight/heroDistanceToObj(obj))*finalPosition_y_m; // assuming the ball's x position is 6m away from me
+
+    // console.log(objHeightOnScreen_y_px);
+    // console.log(myGameArea.canvasHeight);
 
     // now I can update objHeight_y and velocity if they aren't going to hit the ground. Otherwise, I need to draw them on the ground
-    if (finalObjPixelHeight_y >= myGameArea.canvasHeight) {
+    if (finalPosition_y_m <= 0) {
         var numPixelsAboveGround = 1;
         // If the ball would go past the canvas ground if it wasn't for me:
         // set the ball on the ground with no bounce:
-        finalObjPixelHeight_y = myGameArea.canvasHeight-numPixelsAboveGround;
-        finalPosition_y = numPixelsAboveGround/(numPixels_y+(-1*numPixels_y/heroDistanceToObj(obj)));
+        objHeightOnScreen_y_px = myGameArea.canvasHeight-numPixelsAboveGround;
+        // finalPosition_y_m = numPixelsAboveGround/(screenHeight+(-1*screenHeight/heroDistanceToObj(obj)));
         finalVelocity_y = 0;
+        finalPosition_y_m = 0;
     }
-    obj.y = finalObjPixelHeight_y; // obj.y needs to be the very bottom y position of the obj
+    obj.y = objHeightOnScreen_y_px;
     obj.objVelocity_y = finalVelocity_y;
-    obj.objMetersAboveGround = finalPosition_y; // I need to update the obj height above ground
+    obj.objMetersAboveGround = finalPosition_y_m; // I need to update the obj height above ground
 }
 
 function sumOfForces_x(obj) {
@@ -406,9 +435,11 @@ function sumOfForces_x(obj) {
 
 function sumOfForces_z(obj) {
     if (me_ThePlayer1CharacterHero.tryingToForceObjForward == true) {
-        obj.z += 1;
+        // obj.z -= 1;
+        obj.lengthOnScreen_px -= 1;
     } else if (me_ThePlayer1CharacterHero.tryingToForceObjBack == true) {
-        obj.z -= 1;
+        // obj.z += 1;
+        obj.lengthOnScreen_px += 1;
     }
 }
 
@@ -436,10 +467,9 @@ function forces(obj) {
 
 
 // elementType="Water", Rock, Fire, air, metal, electricity, laser
-
+// ball1 = new ballComponent(300, 300, 0, 100, "blue", true, 80, "water");
 // draw an circle/ball to the canvas:
-function ballComponent(x=100, y=200, z=0, radius, color, filled=true, mass=50, elementType="water", objMetersAboveGround=4) {
-    this.objMetersAboveGround = objMetersAboveGround;
+function ballComponent(x=300, y=400, z=0, radius=100, color="blue", filled=true, mass=50, elementType="water") {
     this.objVelocity_y = 0;
     this.objVelocity_x = 0;
     this.objVelocity_z = 0;
@@ -449,23 +479,30 @@ function ballComponent(x=100, y=200, z=0, radius, color, filled=true, mass=50, e
     this.x = x;
     this.y = y;
     this.z = z;
+    // this.objMetersAboveGround = function() {return metersPerPixel*(myGameArea.canvasHeight-this.y-2*this.radius);};
+    this.objMetersAboveGround = (myGameArea.canvasHeight-this.y)*metersPerPixel;
     this.radius = radius;
-    this.objHeight = function() {return this.y + this.radius;};
+    this.lengthOnScreen_px = this.radius;
+    // this.objHeight = function() {return this.y + this.radius;};
     this.filled = filled;
     
     // update is needed for redrawing the component to the canvas every tick
     this.update = function() {
-        if (this.radius - this.z > 1) { // if the object isn't too far away, draw it
-            ctx = myGameArea.context;
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(this.x-this.radius, this.y-this.radius, this.radius - this.z, 0, 2 * Math.PI);
-            if (this.filled == true) {
-                ctx.fill();
-            } else {
-                ctx.stroke();
-            }
+        // if (this.radius - this.z > 1) { // if the object isn't too far away, draw it
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        // ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        // ctx.arc(this.x, this.y, this.radius-this.lengthOnScreen_px, 0, 2 * Math.PI);
+        ctx.arc(this.x - this.radius, this.y - this.radius, this.radius, 0, 2 * Math.PI);
+        // ctx.arc(this.x-this.lengthOnScreen_px/2, this.y-this.lengthOnScreen_px/2, this.lengthOnScreen_px/2, 0, 2 * Math.PI);
+        // ctx.arc(this.x-this.lengthOnScreen_px/2, this.y-this.lengthOnScreen_px/2, this.lengthOnScreen_px/2 - this.z, 0, 2 * Math.PI);
+        if (this.filled == true) {
+            ctx.fill();
+        } else {
+            ctx.stroke();
         }
+        // }
     }
     // this.gravityUpdate = function() {
     //     if ((this.y+this.radius) < ctx.height) {
@@ -475,8 +512,7 @@ function ballComponent(x=100, y=200, z=0, radius, color, filled=true, mass=50, e
 }
 
 // draw a square/rectangle/block to canvas
-function blockComponent(x=200, y=300, z=0, width, height, color, mass=100, elementType="rock", objMetersAboveGround=4) {
-    this.objMetersAboveGround = objMetersAboveGround;
+function blockComponent(x=200, y=300, z=0, width, height, color, mass=100, elementType="rock") {
     this.objVelocity_y = 0;
     this.objVelocity_x = 0;
     this.objVelocity_z = 0;
@@ -488,20 +524,24 @@ function blockComponent(x=200, y=300, z=0, width, height, color, mass=100, eleme
     this.x = x;
     this.y = y;
     this.z = z;
-    this.objHeight = function() {return this.y + this.height;};
+    this.lengthOnScreen_px = this.height;
+    this.objMetersAboveGround = (myGameArea.canvasHeight-this.y) * metersPerPixel; //function() {return metersPerPixel*(myGameArea.canvasHeight-this.y);};
+    // this.objHeight = function() {return this.y + this.height;};
     this.color = color;
     this.update = function() {
-        if (this.width - this.z > 1 || this.height - this.z > 1) { // if the object isn't too far away, draw it
-            ctx = myGameArea.context;
-            ctx.fillStyle = color;
-            ctx.fillRect(this.x-this.width, this.y-this.height, this.width - this.z, this.height - this.z);
-        }
+        // if (this.width - this.z > 1 || this.height - this.z > 1) { // if the object isn't too far away, draw it
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x-this.width, this.y-this.height, this.width, this.height);
+        // ctx.fillRect(this.x-this.width, this.y-this.height, this.width - this.z, this.height - this.z); this.lengthOnScreen_px
+        // ctx.fillRect(this.x-this.lengthOnScreen_px, this.y-this.lengthOnScreen_px, this.lengthOnScreen_px - this.z, this.lengthOnScreen_px - this.z);
+        // }
     }
 }
 
-function heroDistanceToObj(obj) {
-    return Math.max(obj.z - hero.z, 5);
-    // return ((obj.x-hero.x)**2 + (obj.y-hero.y)**2 + (obj.z-hero.z)**2)**0.5;
+function heroDistanceToObj_m(obj) {
+    // return Math.max(obj.z - hero.z, 5);
+    return metersPerPixel * Math.sqrt((obj.x-hero.x)**2 + (obj.y-hero.y)**2 + (obj.z-hero.z)**2);//**0.5;
 }
 
 
